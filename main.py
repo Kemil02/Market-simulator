@@ -16,6 +16,8 @@ ticker_data = {
 
 db_setup()
 
+simulator = Simulator()
+
 #Layout
 app.layout = html.Div([
     html.H1("Live stock chart", style={"textAlign": "center"}),
@@ -30,9 +32,7 @@ app.layout = html.Div([
 def new_tick(n):
   global ticker_data
 
-  #last_close = ticker_data[-1]["close"] if ticker_data else None
-  
-  new_data = simulate_tick(n)
+  new_data = simulator.run_epoch()
   
   for ticker, data_list in ticker_data.items():
     data_list.append(new_data[ticker])
