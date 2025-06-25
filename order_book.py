@@ -15,6 +15,9 @@ class Order:
     self.size = self.size - trade_size
     return self.size
   
+  def stringify(self):
+    return f"{self.price:.2f} --- ({self.size:.2f} / {self.initial_size:.2f})"
+  
   
   
 class BuyOrder(Order):
@@ -46,28 +49,42 @@ class OrderBook:
     self.initial_price = initial_price
   
   
-  
+  #Chck if sell order can be matched from book, otherwise add to book
   def add_sell_order(self, order: SellOrder):
-    top_buy_order: BuyOrder | None = self.get_priority_buy()
-    
-    if top_buy_order: 
-      if top_buy_order.price >= order.price:
-        self.trade_orders(top_buy_order, order)
-        
+    exit = False
+    while not order.fulfilled and exit == False:
+      top_buy_order: BuyOrder | None = self.get_priority_buy()
+      
+      if top_buy_order: 
+        if top_buy_order.price >= order.price:
+          self.trade_orders(top_buy_order, order)
+        else:
+          exit = True
+      else:
+        exit = True
+          
     if not order.fulfilled:   
       self.sell_orders.add(order)
     
     self.order_history.append(order)
     
     
-    
+  
+  #Chck if buy order can be matched from book, otherwise add to book
   def add_buy_order(self, order: BuyOrder):
-    top_sell_order: SellOrder | None = self.get_priority_sell()
-    
-    if top_sell_order: 
-      if top_sell_order.price <= order.price:
-        self.trade_orders(order, top_sell_order)
+    exit = False
+    while not order.fulfilled and exit == False:
+      top_sell_order: SellOrder | None = self.get_priority_sell()
+      
+      if top_sell_order: 
+        if top_sell_order.price <= order.price:
+          self.trade_orders(order, top_sell_order)
+        else:
+          exit = True
+      else:
+        exit = True
         
+    
     if not order.fulfilled:   
       self.buy_orders.add(order)
     
@@ -111,7 +128,7 @@ class OrderBook:
     print("start time: ", start_time, "end time: ", end_time)
     if len(self.trade_history) == 0:
       return None
-    trades = list(self.trade_history.irange_key(-end_time, -start_time))
+    trades = list(self.trade_history.irange_key(-end_time, -start_time))#Start and end time negative to account for sorting order of sortedkeylist
     
     '''
     for t in self.trade_history:
@@ -127,11 +144,17 @@ class OrderBook:
     volume = sum(trade.size for trade in trades)
     
     return {
-      "low": min_price,
-      "high": max_price,
-      "open": open_price,
-      "close": close_price,
-      "volume": volume
+      "price_data": [{
+        "low": min_price,
+        "high": max_price,
+        "open": open_price,
+        "close": close_price,
+        "volume": volume
+        }],
+      "order_data": {
+        "sell_orders": list(self.sell_orders),
+        "buy_orders": list(self.buy_orders)
+      }
     }
     
     
@@ -145,9 +168,12 @@ class OrderBook:
     print("===========================")
     
     #Check that the orders are matching
-    if buy_order.price < sell_order.price or buy_order.size <= 0 or sell_order.size <= 0:
-      print("fail!")
-      raise Exception("Matching failed")
+    if buy_order.price < sell_order.price:
+      raise Exception("Matching failed: buy order < sell order")
+    if buy_order.size <= 0:
+      raise Exception("Matching failed: buy order <= 0")
+    if sell_order.size <= 0:
+      raise Exception("Matching failed: sell order <= 0")
     
     #Find largest possible trade
     trade_size = min(buy_order.size, sell_order.size)

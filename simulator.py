@@ -26,10 +26,10 @@ class Simulator:
     
   def run_orders(self, book: OrderBook):
     current_price: float = book.get_price()
-    for i in range(0, 5):
-      buy_price = abs(stats.norm.rvs(current_price, 10))
+    for i in range(0, 4):
+      buy_price = abs(stats.norm.rvs(1 * current_price, 10))
       buy_size = abs(stats.norm.rvs(10, 10))
-      sell_price = abs(stats.norm.rvs(current_price, 10))
+      sell_price = abs(stats.norm.rvs(1 * current_price, 10))
       sell_size = abs(stats.norm.rvs(10, 10))
       
       buy_order = BuyOrder(buy_price, buy_size, time.time())

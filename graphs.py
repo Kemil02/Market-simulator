@@ -1,9 +1,5 @@
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output
 import plotly.graph_objs as go
-import random
-import datetime
+
 
 def candlestick_graph(data):
   fig = go.Figure(data=[go.Candlestick(
