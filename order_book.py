@@ -1,5 +1,7 @@
 from sortedcontainers import SortedKeyList
 import time
+import queue
+import threading
 
   
 class Order:
@@ -47,10 +49,20 @@ class OrderBook:
     self.trade_history = SortedKeyList(key = lambda x: -x.timestamp)
     self.order_history = []
     self.initial_price = initial_price
+    self.order_queue = queue.Queue()
+    
+    #set up thread for monitoring the order_queue and handling orders synchronously when they appear in the queue
+    queue_worker_thread = threading.Thread(target = self.order_queue_worker, daemon = True)
+    
+    queue_worker_thread.start()
   
+  #Add new order to queue
+  def new_order(self, order: Order):
+    self.order_queue.put(order)
+    
   
-  #Chck if sell order can be matched from book, otherwise add to book
-  def add_sell_order(self, order: SellOrder):
+  #Check if sell order can be matched from book, otherwise add to book
+  def __handle_sell_order(self, order: SellOrder):
     exit = False
     while not order.fulfilled and exit == False:
       top_buy_order: BuyOrder | None = self.get_priority_buy()
@@ -68,10 +80,9 @@ class OrderBook:
     
     self.order_history.append(order)
     
-    
   
-  #Chck if buy order can be matched from book, otherwise add to book
-  def add_buy_order(self, order: BuyOrder):
+  #Check if buy order can be matched from book, otherwise add to book
+  def __handle_buy_order(self, order: BuyOrder):
     exit = False
     while not order.fulfilled and exit == False:
       top_sell_order: SellOrder | None = self.get_priority_sell()
@@ -89,6 +100,20 @@ class OrderBook:
       self.buy_orders.add(order)
     
     self.order_history.append(order)
+    
+    
+  
+  def order_queue_worker(self):
+    while True:
+      new_order = self.order_queue.get()
+      if isinstance(new_order, BuyOrder):
+        self.__handle_buy_order(new_order)
+      elif isinstance(new_order, SellOrder):
+        self.__handle_sell_order(new_order)
+      elif new_order == None:
+        break
+      
+    
     
   
   

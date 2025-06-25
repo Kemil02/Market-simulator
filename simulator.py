@@ -2,12 +2,16 @@ import plotly.graph_objs as go
 from db import *
 from order_book import *
 from scipy import stats
+import threading
 
 class Simulator:
   def __init__(self) -> None:
     self.order_books = [OrderBook("AAA", 100)]
     self.epoch = 0
     self.previous_epoch_end = time.time()
+    
+    
+    
   
   def run_epoch(self):
     tick_data = {}
@@ -35,8 +39,8 @@ class Simulator:
       buy_order = BuyOrder(buy_price, buy_size, time.time())
       sell_order = SellOrder(sell_price, sell_size, time.time())
       
-      book.add_sell_order(sell_order)
-      book.add_buy_order(buy_order)
+      book.new_order(sell_order)
+      book.new_order(buy_order)
       
 
 
